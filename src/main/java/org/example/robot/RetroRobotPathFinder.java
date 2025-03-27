@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import org.example.robot.command.MoveRobotCommand;
 import org.example.robot.command.RobotCommand;
+import org.example.robot.command.TurnRobotCommand;
 
 import java.awt.*;
 import java.util.List;
@@ -19,7 +20,7 @@ public class RetroRobotPathFinder {
         Double angle = Math.atan2(yEnd - yStart, xEnd - xStart) - radStart;
 
         RobotCommand moveCommand = new MoveRobotCommand(distance);
-        RobotCommand turnCommand = new MoveRobotCommand(angle);
+        RobotCommand turnCommand = new TurnRobotCommand(angle);
         return List.of(moveCommand, turnCommand);
     }
 }

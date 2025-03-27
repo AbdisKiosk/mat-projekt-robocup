@@ -9,6 +9,7 @@ import org.example.robot.command.RobotCommand;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 @AllArgsConstructor
@@ -18,13 +19,12 @@ public class RetroRobotRaceMap {
 
     public void findFastestPath(@NonNull RetroRobot robot) {
         for(List<RetroRobotRaceObjective> robotRaceObjectives : allPossibleObjectiveSequences()) {
-            List<RobotCommand> commands = findCommandsForPath(robot, robotRaceObjectives);
-            double totalTime = commands.stream().mapToDouble(command -> command.execute(new RetroRobotEntity(robot, 0, 0, 0))).sum();
-            System.out.println("Total time for path " + robotRaceObjectives + " is " + totalTime);
+            double timeSpent = findCommandsForPath(robot, robotRaceObjectives);
+            System.out.println("Total time for path " + robotRaceObjectives + " is " + timeSpent);
         }
     }
 
-    public @NonNull List<RobotCommand> findCommandsForPath(@NonNull RetroRobot robot,
+    public @NonNull double findCommandsForPath(@NonNull RetroRobot robot,
                                                            @NonNull List<RetroRobotRaceObjective> raceObjectives) {
         RetroRobotPathFinder pathFinder = new RetroRobotPathFinder(robot);
         RetroRobotRaceObjective first = raceObjectives.getFirst();
@@ -34,31 +34,32 @@ public class RetroRobotRaceMap {
         double startRad = Math.atan2(first.getPosY(), first.getPosX());
 
         RetroRobotEntity entity = new RetroRobotEntity(robot, startX, startY, startRad);
-        List<RobotCommand> commands = new ArrayList<>();
+        double timeSpent = 0;
         for(RetroRobotRaceObjective raceObjective : raceObjectives) {
             List<RobotCommand> objectiveCommands = pathFinder.getCommandsForPath(entity.getPosX(), entity.getPosY(), entity.getPosYawRad(), raceObjective.getPosX(), raceObjective.getPosY());
-            commands.addAll(objectiveCommands);
+            timeSpent += objectiveCommands.stream().mapToDouble(command -> command.execute(new RetroRobotEntity(robot, 0, 0, 0))).sum();
         }
 
-        return commands;
+        return timeSpent;
     }
 
     //det her lort er lavet af chat
     public final Collection<List<RetroRobotRaceObjective>> allPossibleObjectiveSequences() {
         List<List<RetroRobotRaceObjective>> result = new ArrayList<>();
-        int n = objectives.size();
-
-        // Generate all subsets using bit manipulation
-        for (int i = 0; i < (1 << n); i++) {
-            List<RetroRobotRaceObjective> subset = new ArrayList<>();
-            for (int j = 0; j < n; j++) {
-                if ((i & (1 << j)) != 0) {
-                    subset.add(objectives.get(j));
-                }
-            }
-            result.add(subset);
-        }
+        allPermutations(new ArrayList<>(objectives), 0, result);
         return result;
+    }
+
+    private void allPermutations(List<RetroRobotRaceObjective> list, int start, List<List<RetroRobotRaceObjective>> result) {
+        if (start == list.size() - 1) {
+            result.add(new ArrayList<>(list));
+            return;
+        }
+        for (int i = start; i < list.size(); i++) {
+            Collections.swap(list, start, i);
+            allPermutations(list, start + 1, result);
+            Collections.swap(list, start, i); // backtrack
+        }
     }
 
 

@@ -8,6 +8,7 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
+        System.out.println("sigma");
         List<RetroRobotRaceObjective> objectives = List.of(
                 new RetroRobotRaceObjective(3, 4),
                 new RetroRobotRaceObjective(5, 3),
