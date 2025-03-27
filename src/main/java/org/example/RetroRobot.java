@@ -1,5 +1,8 @@
 package org.example;
 
+import lombok.Data;
+
+@Data
 public class RetroRobot {
 
     private final String name;
