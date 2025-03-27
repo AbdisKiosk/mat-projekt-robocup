@@ -10,5 +10,4 @@ public class StopCommand implements RobotCommand {
         // Mens robotten stopper, bevæger den sig så, eller står den bare stille?
         return entity.getRetroRobot().getStopTime();
     }
-
 }

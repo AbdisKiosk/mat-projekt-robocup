@@ -18,16 +18,25 @@ public class RetroRobotRaceMap {
     private final List<RetroRobotRaceObjective> objectives;
 
     public void findFastestPath(@NonNull RetroRobot robot) {
+        List<Double> totalTimes = new ArrayList<>();
         for(List<RetroRobotRaceObjective> robotRaceObjectives : allPossibleObjectiveSequences()) {
-            double timeSpent = findCommandsForPath(robot, robotRaceObjectives);
-            System.out.println("Total time for path " + robotRaceObjectives + " is " + timeSpent);
+            RaceResult result = findCommandsForPath(robot, robotRaceObjectives);
+            System.out.println("Result: " + result);
+            totalTimes.add(result.getTimeSpent());
         }
+        totalTimes.sort(Double::compareTo);
+        System.out.println(robot.getName() + " " +totalTimes.toString());
+
     }
 
-    public @NonNull double findCommandsForPath(@NonNull RetroRobot robot,
+    public @NonNull RaceResult findCommandsForPath(@NonNull RetroRobot robot,
                                                            @NonNull List<RetroRobotRaceObjective> raceObjectives) {
+        List<RetroRobotRaceObjective> objectives = new ArrayList<>(raceObjectives);
+        objectives.add(new RetroRobotRaceObjective("O",0, 0));
+
         RetroRobotPathFinder pathFinder = new RetroRobotPathFinder(robot);
         RetroRobotRaceObjective first = raceObjectives.getFirst();
+
 
         double startX = 0;
         double startY = 0;
@@ -35,12 +44,13 @@ public class RetroRobotRaceMap {
 
         RetroRobotEntity entity = new RetroRobotEntity(robot, startX, startY, startRad);
         double timeSpent = 0;
-        for(RetroRobotRaceObjective raceObjective : raceObjectives) {
+        for(RetroRobotRaceObjective raceObjective : objectives) {
             List<RobotCommand> objectiveCommands = pathFinder.getCommandsForPath(entity.getPosX(), entity.getPosY(), entity.getPosYawRad(), raceObjective.getPosX(), raceObjective.getPosY());
             timeSpent += objectiveCommands.stream().mapToDouble(command -> command.execute(new RetroRobotEntity(robot, 0, 0, 0))).sum();
         }
+        String path = objectives.stream().map(RetroRobotRaceObjective::getName).reduce((a, b) -> a + b).orElse("");
 
-        return timeSpent;
+        return new RaceResult(timeSpent, path);
     }
 
     //det her lort er lavet af chat
