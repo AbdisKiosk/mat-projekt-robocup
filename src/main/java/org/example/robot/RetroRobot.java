@@ -1,4 +1,4 @@
-package org.example;
+package org.example.robot;
 
 import lombok.Data;
 
@@ -6,8 +6,8 @@ import lombok.Data;
 public class RetroRobot {
 
     private final String name;
-    private final int velocityMS;
-    private final int rotationSpeedRad;
+    private final int movingVelocityMS;
+    private final double rotationSpeedRad;
     private final int stopTime;
 
 }
