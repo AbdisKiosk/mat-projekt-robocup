@@ -7,10 +7,7 @@ import org.example.robot.RetroRobotEntity;
 import org.example.robot.RetroRobotPathFinder;
 import org.example.robot.command.RobotCommand;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 @AllArgsConstructor
 public class RetroRobotRaceMap {
@@ -18,15 +15,14 @@ public class RetroRobotRaceMap {
     private final List<RetroRobotRaceObjective> objectives;
 
     public void findFastestPath(@NonNull RetroRobot robot) {
-        List<Double> totalTimes = new ArrayList<>();
-        for(List<RetroRobotRaceObjective> robotRaceObjectives : allPossibleObjectiveSequences()) {
+        List<RaceResult> results = new ArrayList<>();
+        for (List<RetroRobotRaceObjective> robotRaceObjectives : allPossibleObjectiveSequences()) {
             RaceResult result = findCommandsForPath(robot, robotRaceObjectives);
             System.out.println("Result: " + result);
-            totalTimes.add(result.getTimeSpent());
+            results.add(result);
         }
-        totalTimes.sort(Double::compareTo);
-        System.out.println(robot.getName() + " " +totalTimes.toString());
-
+        results.sort(Comparator.comparingDouble(RaceResult::getTimeSpent));
+        System.out.println(robot.getName() + " " + results.toString());
     }
 
     public @NonNull RaceResult findCommandsForPath(@NonNull RetroRobot robot,
@@ -37,20 +33,44 @@ public class RetroRobotRaceMap {
         RetroRobotPathFinder pathFinder = new RetroRobotPathFinder(robot);
         RetroRobotRaceObjective first = raceObjectives.getFirst();
 
+        double initX = 0;
+        double initY = 0;
+        double initRad = Math.atan2(first.getPosY(), first.getPosX());
 
-        double startX = 0;
-        double startY = 0;
-        double startRad = Math.atan2(first.getPosY(), first.getPosX());
-
-        RetroRobotEntity entity = new RetroRobotEntity(robot, startX, startY, startRad);
-        double timeSpent = 0;
+        RetroRobotEntity entity = new RetroRobotEntity(robot, initX, initY, initRad);
+        List<RaceResultStep> steps = new ArrayList<>();
+        String lastObjectiveName = "O";
         for(RetroRobotRaceObjective raceObjective : objectives) {
-            List<RobotCommand> objectiveCommands = pathFinder.getCommandsForPath(entity.getPosX(), entity.getPosY(), entity.getPosYawRad(), raceObjective.getPosX(), raceObjective.getPosY());
-            timeSpent += objectiveCommands.stream().mapToDouble(command -> command.execute(new RetroRobotEntity(robot, 0, 0, 0))).sum();
-        }
-        String path = objectives.stream().map(RetroRobotRaceObjective::getName).reduce((a, b) -> a + b).orElse("");
+            double startX = entity.getPosX();
+            double startY = entity.getPosY();
+            double startRad = entity.getPosYawRad();
+            List<RobotCommand> objectiveCommands
+                    = pathFinder.getCommandsForPath(startX, startY, startRad, raceObjective.getPosX(), raceObjective.getPosY());
 
-        return new RaceResult(timeSpent, path);
+            double timeSpent = objectiveCommands.stream()
+                    .mapToDouble(command -> command.execute(new RetroRobotEntity(robot, 0, 0, 0))).sum();
+
+            double endX = entity.getPosX();
+            double endY = entity.getPosY();
+            double endRad = entity.getPosYawRad();
+
+            steps.add(
+                    new RaceResultStep(
+                            lastObjectiveName,
+                            startX,
+                            startY,
+                            startRad,
+                            raceObjective.getName(),
+                            endX,
+                            endY,
+                            endRad,
+                            timeSpent,
+                            objectiveCommands
+                    )
+            );
+            lastObjectiveName = raceObjective.getName();
+        }
+        return new RaceResult(steps);
     }
 
     //det her lort er lavet af chat
