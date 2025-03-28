@@ -22,7 +22,21 @@ public class RetroRobotRaceMap {
             results.add(result);
         }
         results.sort(Comparator.comparingDouble(RaceResult::getTimeSpent));
-        System.out.println(robot.getName() + " " + results.toString());
+        System.out.println(robot.getName() + ":");
+        for(String resultPart : getPrettyResult(results.getFirst())) {
+            System.out.println(resultPart);
+        }
+        System.out.println(" - " + results.getFirst().getTimeSpent() + "s");
+    }
+
+    protected @NonNull List<String> getPrettyResult(@NonNull RaceResult result) {
+        List<String> stepStrings = new ArrayList<>();
+        for(RaceResultStep step : result.getSteps()) {
+            stepStrings.add("  - " + step.getStartPointName() + " -> " + step.getEndPointName() + " (" + step.getTimeTook() + "s)");
+            stepStrings.add("  - " + step.getCommands());
+        }
+
+        return stepStrings;
     }
 
     public @NonNull RaceResult findCommandsForPath(@NonNull RetroRobot robot,
