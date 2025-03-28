@@ -18,8 +18,14 @@ public class MoveRobotCommand implements RobotCommand {
         entity.setPosX(entity.getPosX() + metersMovedX);
         entity.setPosY(entity.getPosY() + metersMovedY);
 
-        double secondsPerMeter = 1.0 / entity.getRetroRobot().getMovingVelocityMS();
+        double brakeAcceleration =
+                (double) entity.getRetroRobot().getMovingVelocityMS() / entity.getRetroRobot().getStopTime();
 
-        return secondsPerMeter * moveMeters;
+
+        double accelerationAndBrakingDistance = moveMeters / 2;
+        double stopTime = Math.sqrt((2 * accelerationAndBrakingDistance) / brakeAcceleration);
+        double accelerationTime = Math.sqrt((2 * accelerationAndBrakingDistance) / brakeAcceleration);
+
+        return stopTime + accelerationTime;
     }
 }
