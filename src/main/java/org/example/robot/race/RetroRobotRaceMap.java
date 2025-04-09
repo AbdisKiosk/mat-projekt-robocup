@@ -9,6 +9,10 @@ import org.example.robot.command.MoveRobotCommand;
 import org.example.robot.command.RobotCommand;
 import org.example.robot.command.TurnRobotCommand;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.*;
 
 @AllArgsConstructor
@@ -29,6 +33,8 @@ public class RetroRobotRaceMap {
             System.out.println(resultPart);
         }
         System.out.println(" - " + results.getFirst().getTimeSpent() + "s");
+        exportResultsToCSV(results, robot.getName());
+        System.out.println("Eksportet til CSV fil");
     }
 
     protected @NonNull List<String> getPrettyResult(@NonNull RaceResult result) {
@@ -133,6 +139,35 @@ public class RetroRobotRaceMap {
             Collections.swap(list, start, i);
             allPermutations(list, start + 1, result);
             Collections.swap(list, start, i); // backtrack
+        }
+    }
+
+    public void exportResultsToCSV(@NonNull List<RaceResult> results, String robotName) {
+        StringBuilder csvBuilder = new StringBuilder();
+        csvBuilder.append("Robot;FullPath;TotalTimeSpent\n");
+
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.forLanguageTag("da-DK"));
+        symbols.setDecimalSeparator(',');
+        DecimalFormat decimalFormat = new DecimalFormat("#.##", symbols);
+
+        for (RaceResult result : results) {
+            StringBuilder fullPath = new StringBuilder();
+            for (RaceResultStep step : result.getSteps()) {
+                fullPath.append(step.getStartPointName());
+            }
+            fullPath.append(result.getSteps().get(result.getSteps().size() - 1).getEndPointName());
+
+            double totalTimeSpent = result.getTimeSpent();
+
+            csvBuilder.append(robotName).append(";")
+                    .append(fullPath).append(";")
+                    .append(decimalFormat.format(totalTimeSpent)).append("sek").append("\n");
+        }
+
+        try (FileWriter writer = new FileWriter(robotName + "_results.csv")) {
+            writer.write(csvBuilder.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
