@@ -19,6 +19,6 @@ public class RaceResultStep {
     private final double radEnd;
 
     private final double timeTook;
-    private final List<RobotCommand> commands;
+    private final List<RaceResultCommandStep> commands;
 
 }

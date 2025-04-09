@@ -5,7 +5,9 @@ import lombok.NonNull;
 import org.example.robot.RetroRobot;
 import org.example.robot.RetroRobotEntity;
 import org.example.robot.RetroRobotPathFinder;
+import org.example.robot.command.MoveRobotCommand;
 import org.example.robot.command.RobotCommand;
+import org.example.robot.command.TurnRobotCommand;
 
 import java.util.*;
 
@@ -31,21 +33,34 @@ public class RetroRobotRaceMap {
 
     protected @NonNull List<String> getPrettyResult(@NonNull RaceResult result) {
         List<String> stepStrings = new ArrayList<>();
-        for(RaceResultStep step : result.getSteps()) {
-            stepStrings.add("  - " + step.getStartPointName() + " -> " + step.getEndPointName() + " (" + step.getTimeTook() + "s)");
-            stepStrings.add("  - " + step.getCommands());
+        for (RaceResultStep step : result.getSteps()) {
+            StringBuilder stepsString = new StringBuilder();
+            stepsString.append("  - ")
+                    .append(step.getStartPointName())
+                    .append(" -> ")
+                    .append(step.getEndPointName())
+                    .append(" (")
+                    .append(step.getTimeTook())
+                    .append("s)");
+            for (RaceResultCommandStep command : step.getCommands()) {
+                stepsString.append("\n      ")
+                        .append(command.getName())
+                        .append(" (")
+                        .append(command.getTimeTook())
+                        .append("s)");
+            }
+            stepStrings.add(stepsString.toString());
         }
-
         return stepStrings;
     }
 
     public @NonNull RaceResult findCommandsForPath(@NonNull RetroRobot robot,
-                                                           @NonNull List<RetroRobotRaceObjective> raceObjectives) {
+                                                   @NonNull List<RetroRobotRaceObjective> raceObjectives) {
         List<RetroRobotRaceObjective> objectives = new ArrayList<>(raceObjectives);
-        objectives.add(new RetroRobotRaceObjective("O",0, 0));
+        objectives.add(new RetroRobotRaceObjective("O", 0, 0));
 
         RetroRobotPathFinder pathFinder = new RetroRobotPathFinder(robot);
-        RetroRobotRaceObjective first = raceObjectives.getFirst();
+        RetroRobotRaceObjective first = raceObjectives.get(0);
 
         double initX = 0;
         double initY = 0;
@@ -54,34 +69,49 @@ public class RetroRobotRaceMap {
         RetroRobotEntity entity = new RetroRobotEntity(robot, initX, initY, initRad);
         List<RaceResultStep> steps = new ArrayList<>();
         String lastObjectiveName = "O";
-        for(RetroRobotRaceObjective raceObjective : objectives) {
+        for (RetroRobotRaceObjective raceObjective : objectives) {
             double startX = entity.getPosX();
             double startY = entity.getPosY();
             double startRad = entity.getPosYawRad();
-            List<RobotCommand> objectiveCommands
-                    = pathFinder.getCommandsForPath(startX, startY, startRad, raceObjective.getPosX(), raceObjective.getPosY());
+            List<RobotCommand> objectiveCommands = pathFinder.getCommandsForPath(startX, startY, startRad,
+                    raceObjective.getPosX(), raceObjective.getPosY());
 
-            double timeSpent = objectiveCommands.stream()
-                    .mapToDouble(command -> command.execute(new RetroRobotEntity(robot, 0, 0, 0))).sum();
+            List<RaceResultCommandStep> objectiveCommandSteps = new ArrayList<>();
+            double timeSpent = 0;
+            for (RobotCommand command : objectiveCommands) {
+                double cmdTime = command.execute(entity);
+                timeSpent += cmdTime;
+                String commandName = command.getClass().getSimpleName();
+
+                if (command instanceof TurnRobotCommand) {
+                    // Assuming TurnRobotCommand has a getTurnRads() method returning the yaw difference.
+                    double yawDiff = ((TurnRobotCommand) command).getTurnRads();
+                    commandName += " (yaw-diff: " + yawDiff + ")";
+                } else if (command instanceof MoveRobotCommand) {
+                    // Assuming MoveRobotCommand has a getMoveMeters() method returning the meter distance.
+                    double meterDist = ((MoveRobotCommand) command).getMoveMeters();
+                    commandName += " (meter-dist: " + meterDist + ")";
+                }
+
+                objectiveCommandSteps.add(new RaceResultCommandStep(command, commandName, cmdTime));
+            }
 
             double endX = entity.getPosX();
             double endY = entity.getPosY();
             double endRad = entity.getPosYawRad();
 
-            steps.add(
-                    new RaceResultStep(
-                            lastObjectiveName,
-                            startX,
-                            startY,
-                            startRad,
-                            raceObjective.getName(),
-                            endX,
-                            endY,
-                            endRad,
-                            timeSpent,
-                            objectiveCommands
-                    )
-            );
+            steps.add(new RaceResultStep(
+                    lastObjectiveName,
+                    startX,
+                    startY,
+                    startRad,
+                    raceObjective.getName(),
+                    endX,
+                    endY,
+                    endRad,
+                    timeSpent,
+                    objectiveCommandSteps
+            ));
             lastObjectiveName = raceObjective.getName();
         }
         return new RaceResult(steps);

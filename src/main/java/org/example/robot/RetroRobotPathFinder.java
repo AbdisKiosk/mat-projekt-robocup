@@ -6,7 +6,6 @@ import org.example.robot.command.MoveRobotCommand;
 import org.example.robot.command.RobotCommand;
 import org.example.robot.command.TurnRobotCommand;
 
-import java.awt.*;
 import java.util.List;
 
 @AllArgsConstructor
@@ -16,11 +15,11 @@ public class RetroRobotPathFinder {
 
     public @NonNull List<RobotCommand> getCommandsForPath(double xStart, double yStart, double radStart,
                                                           double xEnd, double yEnd) {
-        Double distance = Math.sqrt(Math.pow(xEnd - xStart, 2) + Math.pow(yEnd - yStart, 2));
-        Double angle = Math.atan2(yEnd - yStart, xEnd - xStart) - radStart;
+        double angle = Math.atan2(yEnd - yStart, xEnd - xStart) - radStart;
+        double distance = Math.sqrt(Math.pow(xEnd - xStart, 2) + Math.pow(yEnd - yStart, 2));
 
-        RobotCommand moveCommand = new MoveRobotCommand(distance);
         RobotCommand turnCommand = new TurnRobotCommand(angle);
-        return List.of(moveCommand, turnCommand);
+        RobotCommand moveCommand = new MoveRobotCommand(distance);
+        return List.of(turnCommand, moveCommand);
     }
 }
