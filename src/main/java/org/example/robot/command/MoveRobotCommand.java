@@ -16,18 +16,28 @@ public class MoveRobotCommand implements RobotCommand {
     public double execute(@NonNull RetroRobotEntity entity) {
         double metersMovedX = Math.cos(entity.getPosYawRad()) * moveMeters;
         double metersMovedY = Math.sin(entity.getPosYawRad()) * moveMeters;
-
         entity.setPosX(entity.getPosX() + metersMovedX);
         entity.setPosY(entity.getPosY() + metersMovedY);
 
-        double brakeAcceleration =
-                (double) entity.getRetroRobot().getMovingVelocityMS() / entity.getRetroRobot().getStopTime();
+        double maxSpeed = entity.getRetroRobot().getMovingVelocityMS();
+        double stopTimeRobot = entity.getRetroRobot().getStopTime();
 
+        double acceleration = maxSpeed / stopTimeRobot;
 
-        double accelerationAndBrakingDistance = moveMeters / 2;
-        double stopTime = Math.sqrt((2 * accelerationAndBrakingDistance) / brakeAcceleration);
-        double accelerationTime = Math.sqrt((2 * accelerationAndBrakingDistance) / brakeAcceleration);
+        double dAccelerate = (maxSpeed * maxSpeed) / (2 * acceleration);
+        double totalAccelerationDistance = 2 * dAccelerate;
 
-        return stopTime + accelerationTime;
+        double totalTime;
+        if (moveMeters < totalAccelerationDistance) {
+            totalTime = 2 * Math.sqrt(moveMeters / acceleration);
+        } else {
+            double tAccelerate = maxSpeed / acceleration;
+            double tDecelerate = tAccelerate;
+            double fullSpeedDistance = moveMeters - totalAccelerationDistance;
+            double tFullSpeed = fullSpeedDistance / maxSpeed;
+            totalTime = tAccelerate + tFullSpeed + tDecelerate;
+        }
+
+        return totalTime;
     }
 }
